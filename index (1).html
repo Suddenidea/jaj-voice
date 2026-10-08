@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JAJ Nectar Grove – Voice Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Mukta:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1f4d3a; --green-d:#163829;
+    --honey:#e3a21a; --honey-d:#b97f08;
+    --ink:#22281f; --muted:#5d665a;
+    --bg:#ffffff; --panel:#fbf6e6; --line:#eadfba;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:'Mukta','Noto Sans Tamil',system-ui,sans-serif;
+    color:var(--ink); background:var(--bg);
+    display:flex; flex-direction:column; max-width:560px; margin:0 auto;
+    padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  header{padding:20px 20px 8px; text-align:center}
+  h1{font-family:'Fraunces',serif; font-weight:700; font-size:1.7rem; margin:0; color:var(--green)}
+  header p{margin:4px 0 0; color:var(--muted); font-size:.95rem}
+  .langs{display:flex; justify-content:center; gap:8px; margin-top:12px}
+  .langs button{
+    border:1.5px solid var(--green); background:#fff; color:var(--green);
+    padding:6px 16px; border-radius:999px; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .langs button[aria-pressed="true"]{background:var(--green); color:#fff}
+  #log{
+    flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:10px;
+    scroll-behavior:smooth;
+  }
+  .msg{max-width:86%; padding:10px 14px; border-radius:16px; line-height:1.45; font-size:1.02rem; white-space:pre-wrap}
+  .bot{background:var(--panel); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px}
+  .me{background:var(--green); color:#fff; align-self:flex-end; border-bottom-right-radius:4px}
+  .hint{align-self:center; color:var(--muted); font-size:.88rem; text-align:center}
+  .dock{padding:10px 16px 18px; border-top:1px solid var(--line); background:#fff}
+  .status{text-align:center; min-height:1.3em; font-size:.92rem; color:var(--muted); margin-bottom:8px}
+  .row{display:flex; align-items:center; gap:10px}
+  #mic{
+    flex:none; width:68px; height:68px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--honey); color:var(--green-d); display:grid; place-items:center;
+    box-shadow:0 0 0 0 rgba(227,162,26,.5);
+  }
+  #mic svg{width:30px; height:30px}
+  #mic.listening{background:var(--green); color:#fff; animation:ring 1.4s infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(31,77,58,.45)}100%{box-shadow:0 0 0 22px rgba(31,77,58,0)}}
+  #mic:focus-visible,.langs button:focus-visible,#send:focus-visible,#txt:focus-visible,.wa:focus-visible{outline:3px solid var(--honey-d); outline-offset:2px}
+  #txt{flex:1; min-width:0; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; font:inherit}
+  #send{flex:none; border:none; background:var(--green); color:#fff; padding:12px 16px; border-radius:12px; font:inherit; font-weight:600; cursor:pointer}
+  .wa{display:block; text-align:center; margin-top:12px; color:var(--green); font-weight:600; text-decoration:underline}
+  @media (prefers-reduced-motion:reduce){#mic.listening{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>JAJ Nectar Grove</h1>
+  <p id="sub">Tap the mic and ask about our honey</p>
+  <div class="langs" role="group" aria-label="Language">
+    <button id="l-en" aria-pressed="true">English</button>
+    <button id="l-ta" aria-pressed="false">தமிழ்</button>
+  </div>
+</header>
+
+<div id="log" aria-live="polite"></div>
+
+<div class="dock">
+  <div class="status" id="status"></div>
+  <div class="row">
+    <button id="mic" aria-label="Tap to speak">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <input id="txt" type="text" placeholder="Or type your question" autocomplete="off">
+    <button id="send">Send</button>
+  </div>
+  <a class="wa" id="wa" href="https://wa.me/918838285576" target="_blank" rel="noopener">Order via WhatsApp</a>
+</div>
+
+<script>
+/* ============ SETTINGS – edit these ============ */
+const API_KEY  = "AIzaSyDxSDzZlbaBqZX7TM_YPqTp55ZDT0m70kY";
+const MODEL    = "gemini-2.5-flash";
+const WHATSAPP = "918838285576";
+/* ================================================= */
+
+const KNOWLEDGE = `
+BUSINESS: JAJ Nectar Grove, Chennai, Tamil Nadu. Sells natural foods. Born from the journey of Suddenidea (fashion and lifestyle) into premium natural foods.
+Mission: deliver natural goodness with purity, authenticity and care to every home.
+
+PRODUCTS IN STOCK NOW:
+- JAJ Pure Honey. Pure natural honey, no added sugar or preservatives, for daily health and wellness use.
+  * 1 kg: Rs 350
+  * 1/2 kg (500 g): Rs 180
+  * FIRST ORDER OFFER: 1 kg for Rs 299 only (shipping extra).
+
+COMING SOON (currently OUT OF STOCK, will be added shortly): Sesame Oil (cold-pressed), Coconut Oil, Groundnut Oil, Dates, Palm Sugar. Do not give prices or dates for these. Tell customers to check back soon or ask on WhatsApp.
+
+DELIVERY:
+- Free delivery within 5 km of Perungudi, Chennai.
+- Other areas in Tamil Nadu: Rs 100 delivery charge.
+- Delivery outside Tamil Nadu and delivery time/days: not confirmed. Ask the customer to confirm on WhatsApp.
+
+PAYMENT: Prepaid only (pay before dispatch). Cash on delivery is NOT available.
+
+ORDERING / CONTACT: WhatsApp or phone 8838285576. Instagram: JAJ Nectar Grove.
+`;
+
+const SYSTEM = `You are the friendly voice assistant of JAJ Nectar Grove. Answer customer questions ONLY using the information below.
+Rules:
+- Keep replies short: 1 to 3 sentences, plain spoken language, no markdown, no bullet points, no emojis.
+- Never invent prices, offers, delivery times, ingredients, certifications or health/medical claims. If the answer is not below, say you are not sure and ask them to message on WhatsApp 8838285576.
+- If asked to order, tell them to tap the Order via WhatsApp link, and mention payment is prepaid only.
+- Reply in the language the customer used. Tamil written in Tamil script if they speak Tamil; otherwise English.
+- Say "rupees" for Rs.
+
+INFORMATION:
+${KNOWLEDGE}`;
+
+const T = {
+  en:{sub:"Tap the mic and ask about our honey", hello:"Hello! Welcome to JAJ Nectar Grove. Ask me about our honey, prices, delivery or payment.",
+      listen:"Listening…", think:"Thinking…", speak:"Speaking…", ph:"Or type your question", send:"Send",
+      wa:"Order via WhatsApp", nomic:"Voice input is not supported in this browser. Please use Chrome, or type your question.",
+      err:"Sorry, I could not answer just now. Please message us on WhatsApp 8838285576.", mic:"Tap to speak", tap:"Tap the mic to speak",
+      denied:"Microphone is blocked. Allow it in the browser settings, or type your question.", none:"I did not hear anything. Tap the mic and try again.",
+      rec:"en-IN", tts:"en-IN"},
+  ta:{sub:"மைக்கை தட்டி தேன் பற்றி கேளுங்கள்", hello:"வணக்கம்! JAJ Nectar Grove-க்கு வரவேற்கிறோம். தேன், விலை, டெலிவரி, பணம் செலுத்துதல் பற்றி கேளுங்கள்.",
+      listen:"கேட்டுக்கொண்டிருக்கிறேன்…", think:"யோசிக்கிறேன்…", speak:"பேசுகிறேன்…", ph:"அல்லது உங்கள் கேள்வியை தட்டச்சு செய்யுங்கள்", send:"அனுப்பு",
+      wa:"WhatsApp-ல் ஆர்டர் செய்ய", nomic:"இந்த உலாவியில் குரல் வசதி இல்லை. Chrome பயன்படுத்தவும் அல்லது தட்டச்சு செய்யவும்.",
+      err:"மன்னிக்கவும், இப்போது பதில் சொல்ல முடியவில்லை. WhatsApp 8838285576-ல் தொடர்பு கொள்ளுங்கள்.", mic:"பேச தட்டவும்", tap:"பேச மைக்கை தட்டவும்",
+      denied:"மைக் தடுக்கப்பட்டுள்ளது. உலாவி அமைப்பில் அனுமதிக்கவும் அல்லது தட்டச்சு செய்யவும்.", none:"எதுவும் கேட்கவில்லை. மீண்டும் முயற்சிக்கவும்.",
+      rec:"ta-IN", tts:"ta-IN"}
+};
+
+let lang = "en", history = [], busy = false, recog = null, listening = false;
+const $ = id => document.getElementById(id);
+const log = $("log"), statusEl = $("status"), mic = $("mic"), txt = $("txt");
+
+function add(role, text){
+  const d = document.createElement("div");
+  d.className = "msg " + (role === "me" ? "me" : "bot");
+  d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+function setStatus(s){ statusEl.textContent = s; }
+
+function applyLang(l){
+  lang = l; const t = T[l];
+  document.documentElement.lang = l;
+  $("sub").textContent = t.sub; txt.placeholder = t.ph; $("send").textContent = t.send;
+  $("wa").textContent = t.wa; mic.setAttribute("aria-label", t.mic); setStatus(t.tap);
+  $("l-en").setAttribute("aria-pressed", l === "en"); $("l-ta").setAttribute("aria-pressed", l === "ta");
+  window.speechSynthesis && speechSynthesis.cancel();
+}
+$("l-en").onclick = () => applyLang("en");
+$("l-ta").onclick = () => applyLang("ta");
+
+/* ---- speech out ---- */
+function speak(text){
+  return new Promise(res => {
+    if(!("speechSynthesis" in window)) return res();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = T[lang].tts;
+    const v = speechSynthesis.getVoices().find(v => v.lang.replace("_","-").toLowerCase().startsWith(u.lang.toLowerCase().slice(0,2)));
+    if(v) u.voice = v;
+    u.rate = 0.97; u.onend = u.onerror = () => res();
+    setStatus(T[lang].speak); speechSynthesis.speak(u);
+  });
+}
+
+/* ---- Gemini ---- */
+async function ask(q){
+  history.push({role:"user", parts:[{text:q}]});
+  const body = {
+    systemInstruction:{parts:[{text:SYSTEM}]},
+    contents: history.slice(-10),
+    generationConfig:{temperature:0.3, maxOutputTokens:300, thinkingConfig:{thinkingBudget:0}}
+  };
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+    {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("API " + r.status);
+  const j = await r.json();
+  const a = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+  if(!a) throw new Error("empty");
+  history.push({role:"model", parts:[{text:a}]});
+  return a;
+}
+
+async function handle(q){
+  q = q.trim(); if(!q || busy) return;
+  busy = true; add("me", q); setStatus(T[lang].think);
+  try{
+    const a = await ask(q); add("bot", a); await speak(a);
+  }catch(e){
+    console.error(e); add("bot", T[lang].err); await speak(T[lang].err);
+  }
+  busy = false; setStatus(T[lang].tap);
+}
+
+/* ---- speech in ---- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function toggleMic(){
+  if(!SR){ add("bot", T[lang].nomic); return; }
+  if(listening){ recog && recog.stop(); return; }
+  if(busy) return;
+  speechSynthesis && speechSynthesis.cancel();
+  recog = new SR(); recog.lang = T[lang].rec; recog.interimResults = false; recog.maxAlternatives = 1;
+  let got = false;
+  recog.onstart = () => { listening = true; mic.classList.add("listening"); setStatus(T[lang].listen); };
+  recog.onresult = e => { got = true; handle(e.results[0][0].transcript); };
+  recog.onerror = e => {
+    if(e.error === "not-allowed" || e.error === "service-not-allowed") add("bot", T[lang].denied);
+    else if(e.error === "no-speech") add("bot", T[lang].none);
+  };
+  recog.onend = () => { listening = false; mic.classList.remove("listening"); if(!got && !busy) setStatus(T[lang].tap); };
+  recog.start();
+}
+mic.onclick = toggleMic;
+$("send").onclick = () => { const v = txt.value; txt.value = ""; handle(v); };
+txt.addEventListener("keydown", e => { if(e.key === "Enter") $("send").click(); });
+$("wa").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Hi, I would like to order JAJ Pure Honey.");
+
+if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
+applyLang("en");
+add("bot", T.en.hello);
+</script>
+</body>
+</html>
