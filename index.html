@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JAJ Nectar Grove – Voice Assistant</title>
+<title>JAJ Nectar Grove – Call Us</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Mukta:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --green:#1f4d3a; --green-d:#163829;
+    --green:#1f4d3a; --green-d:#163829; --red:#b3261e;
     --honey:#e3a21a; --honey-d:#b97f08;
     --ink:#22281f; --muted:#5d665a;
     --bg:#ffffff; --panel:#fbf6e6; --line:#eadfba;
@@ -17,74 +17,132 @@
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{
-    font-family:'Mukta','Noto Sans Tamil',system-ui,sans-serif;
-    color:var(--ink); background:var(--bg);
-    display:flex; flex-direction:column; max-width:560px; margin:0 auto;
-    padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0);
+    font-family:'Mukta','Noto Sans Tamil',system-ui,sans-serif; color:var(--ink); background:var(--bg);
+    max-width:560px; margin:0 auto; display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top,0); padding-bottom:calc(76px + env(safe-area-inset-bottom,0));
   }
-  header{padding:20px 20px 8px; text-align:center}
+  header{padding:22px 20px 6px; text-align:center}
   h1{font-family:'Fraunces',serif; font-weight:700; font-size:1.7rem; margin:0; color:var(--green)}
-  header p{margin:4px 0 0; color:var(--muted); font-size:.95rem}
+  header p{margin:4px 0 0; color:var(--muted)}
   .langs{display:flex; justify-content:center; gap:8px; margin-top:12px}
-  .langs button{
-    border:1.5px solid var(--green); background:#fff; color:var(--green);
-    padding:6px 16px; border-radius:999px; font:inherit; font-weight:600; cursor:pointer;
-  }
+  .langs button{border:1.5px solid var(--green); background:#fff; color:var(--green); padding:6px 16px; border-radius:999px; font:inherit; font-weight:600; cursor:pointer}
   .langs button[aria-pressed="true"]{background:var(--green); color:#fff}
-  #log{
-    flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:10px;
-    scroll-behavior:smooth;
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:18px; text-align:center; gap:10px}
+  #call{
+    width:128px; height:128px; border-radius:50%; border:none; cursor:pointer; color:#fff; background:var(--green);
+    display:grid; place-items:center; box-shadow:0 8px 24px rgba(31,77,58,.28); transition:background .2s, transform .1s;
   }
-  .msg{max-width:86%; padding:10px 14px; border-radius:16px; line-height:1.45; font-size:1.02rem; white-space:pre-wrap}
+  #call:active{transform:scale(.96)}
+  #call svg{width:52px; height:52px}
+  #call.live{background:var(--red); box-shadow:0 0 0 0 rgba(179,38,30,.45); animation:ring 1.5s infinite}
+  @keyframes ring{100%{box-shadow:0 0 0 30px rgba(179,38,30,0)}}
+  #callLabel{font-weight:600; font-size:1.15rem; color:var(--green)}
+  #timer{font-variant-numeric:tabular-nums; color:var(--muted); min-height:1.3em}
+  #status{color:var(--muted); min-height:1.4em}
+  #caption{
+    min-height:72px; max-width:420px; width:100%; padding:12px 14px; border-radius:14px; background:var(--panel);
+    border:1px solid var(--line); line-height:1.45; display:none;
+  }
+  #caption small{display:block; color:var(--muted); margin-bottom:4px}
+  .share{
+    margin-top:8px; border:2px solid var(--green); background:#fff; color:var(--green); padding:11px 20px;
+    border-radius:12px; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .share:disabled{opacity:.45; cursor:not-allowed}
+
+  /* chat widget */
+  #chat{
+    position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:100%; max-width:560px;
+    background:#fff; border:1px solid var(--line); border-bottom:none; border-radius:18px 18px 0 0;
+    box-shadow:0 -6px 24px rgba(0,0,0,.1); display:flex; flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom,0); z-index:5;
+  }
+  #chatHead{
+    display:flex; align-items:center; justify-content:space-between; width:100%; padding:16px 18px; border:none;
+    background:var(--honey); color:var(--green-d); font:inherit; font-weight:700; font-size:1.05rem;
+    border-radius:18px 18px 0 0; cursor:pointer;
+  }
+  #chatBody{display:none; flex-direction:column; height:min(58vh,440px)}
+  #chat.open #chatBody{display:flex}
+  #chat.open #chev{transform:rotate(180deg)}
+  #log{flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px}
+  .msg{max-width:86%; padding:9px 13px; border-radius:15px; line-height:1.4; white-space:pre-wrap}
   .bot{background:var(--panel); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px}
   .me{background:var(--green); color:#fff; align-self:flex-end; border-bottom-right-radius:4px}
-  .hint{align-self:center; color:var(--muted); font-size:.88rem; text-align:center}
-  .dock{padding:10px 16px 18px; border-top:1px solid var(--line); background:#fff}
-  .status{text-align:center; min-height:1.3em; font-size:.92rem; color:var(--muted); margin-bottom:8px}
-  .row{display:flex; align-items:center; gap:10px}
-  #mic{
-    flex:none; width:68px; height:68px; border-radius:50%; border:none; cursor:pointer;
-    background:var(--honey); color:var(--green-d); display:grid; place-items:center;
-    box-shadow:0 0 0 0 rgba(227,162,26,.5);
-  }
-  #mic svg{width:30px; height:30px}
-  #mic.listening{background:var(--green); color:#fff; animation:ring 1.4s infinite}
-  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(31,77,58,.45)}100%{box-shadow:0 0 0 22px rgba(31,77,58,0)}}
-  #mic:focus-visible,.langs button:focus-visible,#send:focus-visible,#txt:focus-visible,.wa:focus-visible{outline:3px solid var(--honey-d); outline-offset:2px}
-  #txt{flex:1; min-width:0; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; font:inherit}
-  #send{flex:none; border:none; background:var(--green); color:#fff; padding:12px 16px; border-radius:12px; font:inherit; font-weight:600; cursor:pointer}
-  .wa{display:block; text-align:center; margin-top:12px; color:var(--green); font-weight:600; text-decoration:underline}
-  @media (prefers-reduced-motion:reduce){#mic.listening{animation:none}}
+  .row{display:flex; gap:8px; padding:10px 12px; border-top:1px solid var(--line)}
+  #txt{flex:1; min-width:0; padding:11px 13px; border:1.5px solid var(--line); border-radius:12px; font:inherit}
+  #send{border:none; background:var(--green); color:#fff; padding:0 16px; border-radius:12px; font:inherit; font-weight:600; cursor:pointer}
+  .chatShare{margin:0 12px 10px; padding:10px; border:none; border-radius:10px; background:#25d366; color:#06361a; font:inherit; font-weight:700; cursor:pointer}
+  .chatShare:disabled{opacity:.45; cursor:not-allowed}
+
+  /* share sheet */
+  #sheet{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:flex-end; justify-content:center; z-index:10}
+  #sheet.open{display:flex}
+  .card{background:#fff; width:100%; max-width:560px; border-radius:18px 18px 0 0; padding:18px; padding-bottom:calc(18px + env(safe-area-inset-bottom,0))}
+  .card h2{margin:0 0 4px; font-family:'Fraunces',serif; color:var(--green); font-size:1.3rem}
+  .card p{margin:0 0 10px; color:var(--muted); font-size:.95rem}
+  #summary{width:100%; height:190px; padding:12px; border:1.5px solid var(--line); border-radius:12px; font:inherit; resize:vertical}
+  .btns{display:flex; gap:10px; margin-top:12px}
+  .btns button{flex:1; padding:13px; border-radius:12px; border:none; font:inherit; font-weight:700; cursor:pointer}
+  #sendWA{background:#25d366; color:#06361a}
+  #closeSheet{background:#eee; color:var(--ink)}
+
+  button:focus-visible,#txt:focus-visible,#summary:focus-visible{outline:3px solid var(--honey-d); outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){#call.live{animation:none}}
 </style>
 </head>
 <body>
 <header>
   <h1>JAJ Nectar Grove</h1>
-  <p id="sub">Tap the mic and ask about our honey</p>
+  <p id="sub">Pure honey. Talk to us, no phone needed.</p>
   <div class="langs" role="group" aria-label="Language">
     <button id="l-en" aria-pressed="true">English</button>
     <button id="l-ta" aria-pressed="false">தமிழ்</button>
   </div>
 </header>
 
-<div id="log" aria-live="polite"></div>
+<main>
+  <button id="call" aria-label="Call us">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg>
+  </button>
+  <div id="callLabel">Call us</div>
+  <div id="timer"></div>
+  <div id="status"></div>
+  <div id="caption" aria-live="polite"></div>
+  <button class="share" id="share" disabled>Send chat to WhatsApp</button>
+</main>
 
-<div class="dock">
-  <div class="status" id="status"></div>
-  <div class="row">
-    <button id="mic" aria-label="Tap to speak">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-    </button>
-    <input id="txt" type="text" placeholder="Or type your question" autocomplete="off">
-    <button id="send">Send</button>
+<section id="chat" aria-label="Chat">
+  <button id="chatHead" aria-expanded="false">
+    <span id="chatTitle">💬 Chat with us</span><span id="chev">▲</span>
+  </button>
+  <div id="chatBody">
+    <div id="log" aria-live="polite"></div>
+    <button class="chatShare" id="share2" disabled>Send chat to WhatsApp</button>
+    <div class="row">
+      <input id="txt" type="text" placeholder="Type your question" autocomplete="off">
+      <button id="send">Send</button>
+    </div>
   </div>
-  <a class="wa" id="wa" href="https://wa.me/918838285576" target="_blank" rel="noopener">Order via WhatsApp</a>
+</section>
+
+<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="card">
+    <h2 id="sheetTitle">Send to WhatsApp</h2>
+    <p id="sheetHint">Check or edit this message, then send it to us on WhatsApp.</p>
+    <textarea id="summary"></textarea>
+    <div class="btns">
+      <button id="closeSheet">Close</button>
+      <button id="sendWA">Send on WhatsApp</button>
+    </div>
+  </div>
 </div>
 
 <script>
 /* ============ SETTINGS – edit these ============ */
-const API_KEY  = "AIzaSyDxSDzZlbaBqZX7TM_YPqTp55ZDT0m70kY";
-const MODEL    = "gemini-2.5-flash";
+const API_KEY  = "AQ.Ab8RN6Kmp5Cwp7Aj5JgGqX-eFA6ZdemN-aDq6k5EzIzEuLTeoA";
+const MODEL    = "gemini-flash-latest";
 const WHATSAPP = "918838285576";
 /* ================================================= */
 
@@ -98,135 +156,212 @@ PRODUCTS IN STOCK NOW:
   * 1/2 kg (500 g): Rs 180
   * FIRST ORDER OFFER: 1 kg for Rs 299 only (shipping extra).
 
-COMING SOON (currently OUT OF STOCK, will be added shortly): Sesame Oil (cold-pressed), Coconut Oil, Groundnut Oil, Dates, Palm Sugar. Do not give prices or dates for these. Tell customers to check back soon or ask on WhatsApp.
+COMING SOON (currently OUT OF STOCK, will be added shortly): Sesame Oil (cold-pressed), Coconut Oil, Groundnut Oil, Dates, Palm Sugar. Do not give prices or dates for these. Tell customers to check back soon.
 
 DELIVERY:
 - Free delivery within 5 km of Perungudi, Chennai.
 - Other areas in Tamil Nadu: Rs 100 delivery charge.
-- Delivery outside Tamil Nadu and delivery time/days: not confirmed. Ask the customer to confirm on WhatsApp.
+- Delivery outside Tamil Nadu and delivery time/days: not confirmed. The team will confirm on WhatsApp.
 
 PAYMENT: Prepaid only (pay before dispatch). Cash on delivery is NOT available.
 
-ORDERING / CONTACT: WhatsApp or phone 8838285576. Instagram: JAJ Nectar Grove.
+CONTACT: WhatsApp 8838285576. Instagram: JAJ Nectar Grove.
 `;
 
-const SYSTEM = `You are the friendly voice assistant of JAJ Nectar Grove. Answer customer questions ONLY using the information below.
+const SYSTEM = `You are the friendly assistant of JAJ Nectar Grove, answering by voice call or chat. Answer customer questions ONLY using the information below.
 Rules:
 - Keep replies short: 1 to 3 sentences, plain spoken language, no markdown, no bullet points, no emojis.
-- Never invent prices, offers, delivery times, ingredients, certifications or health/medical claims. If the answer is not below, say you are not sure and ask them to message on WhatsApp 8838285576.
-- If asked to order, tell them to tap the Order via WhatsApp link, and mention payment is prepaid only.
-- Reply in the language the customer used. Tamil written in Tamil script if they speak Tamil; otherwise English.
-- Say "rupees" for Rs.
+- Never invent prices, offers, delivery times, ingredients, certifications or health/medical claims. If the answer is not below, say you are not sure and that the team will confirm on WhatsApp.
+- If the customer wants to order, collect politely one thing at a time: quantity (1 kg or 1/2 kg), their name, delivery area or address. Then tell them to send this conversation to WhatsApp so the team can confirm and share payment details (prepaid only).
+- Reply in the language the customer used. Use Tamil script for Tamil; otherwise English.
+- Say "rupees" instead of Rs.
 
 INFORMATION:
 ${KNOWLEDGE}`;
 
 const T = {
-  en:{sub:"Tap the mic and ask about our honey", hello:"Hello! Welcome to JAJ Nectar Grove. Ask me about our honey, prices, delivery or payment.",
-      listen:"Listening…", think:"Thinking…", speak:"Speaking…", ph:"Or type your question", send:"Send",
-      wa:"Order via WhatsApp", nomic:"Voice input is not supported in this browser. Please use Chrome, or type your question.",
-      err:"Sorry, I could not answer just now. Please message us on WhatsApp 8838285576.", mic:"Tap to speak", tap:"Tap the mic to speak",
-      denied:"Microphone is blocked. Allow it in the browser settings, or type your question.", none:"I did not hear anything. Tap the mic and try again.",
-      rec:"en-IN", tts:"en-IN"},
-  ta:{sub:"மைக்கை தட்டி தேன் பற்றி கேளுங்கள்", hello:"வணக்கம்! JAJ Nectar Grove-க்கு வரவேற்கிறோம். தேன், விலை, டெலிவரி, பணம் செலுத்துதல் பற்றி கேளுங்கள்.",
-      listen:"கேட்டுக்கொண்டிருக்கிறேன்…", think:"யோசிக்கிறேன்…", speak:"பேசுகிறேன்…", ph:"அல்லது உங்கள் கேள்வியை தட்டச்சு செய்யுங்கள்", send:"அனுப்பு",
-      wa:"WhatsApp-ல் ஆர்டர் செய்ய", nomic:"இந்த உலாவியில் குரல் வசதி இல்லை. Chrome பயன்படுத்தவும் அல்லது தட்டச்சு செய்யவும்.",
-      err:"மன்னிக்கவும், இப்போது பதில் சொல்ல முடியவில்லை. WhatsApp 8838285576-ல் தொடர்பு கொள்ளுங்கள்.", mic:"பேச தட்டவும்", tap:"பேச மைக்கை தட்டவும்",
-      denied:"மைக் தடுக்கப்பட்டுள்ளது. உலாவி அமைப்பில் அனுமதிக்கவும் அல்லது தட்டச்சு செய்யவும்.", none:"எதுவும் கேட்கவில்லை. மீண்டும் முயற்சிக்கவும்.",
-      rec:"ta-IN", tts:"ta-IN"}
+  en:{sub:"Pure honey. Talk to us, no phone needed.", hello:"Hello! Welcome to JAJ Nectar Grove. How can I help you today?",
+    call:"Call us", end:"End call", connecting:"Connecting…", listen:"Listening… speak now", think:"Thinking…", speak:"Speaking…",
+    chatTitle:"💬 Chat with us", ph:"Type your question", send:"Send", share:"Send chat to WhatsApp",
+    sheetTitle:"Send to WhatsApp", sheetHint:"Check or edit this message, then send it to us on WhatsApp.",
+    sendWA:"Send on WhatsApp", close:"Close", prep:"Preparing your message…", ended:"Call ended. You can send this chat to WhatsApp.",
+    nomic:"Voice calling needs Chrome. Please use the chat below.", denied:"Microphone is blocked. Allow it in browser settings, or use the chat below.",
+    err:"Sorry, I could not answer just now. Please send us a WhatsApp message.", you:"You", bot:"Assistant",
+    chatHello:"Hi! Ask me about our honey, prices, delivery or payment.", silence:"I could not hear you, so the call has ended.",
+    rec:"en-IN", wa:"New enquiry from the JAJ Nectar Grove website"},
+  ta:{sub:"சுத்தமான தேன். எங்களிடம் பேசுங்கள், போன் தேவையில்லை.", hello:"வணக்கம்! JAJ Nectar Grove-க்கு வரவேற்கிறோம். நான் எப்படி உதவலாம்?",
+    call:"அழைக்க", end:"அழைப்பை முடிக்க", connecting:"இணைக்கிறது…", listen:"கேட்கிறேன்… பேசுங்கள்", think:"யோசிக்கிறேன்…", speak:"பேசுகிறேன்…",
+    chatTitle:"💬 எங்களுடன் chat செய்யுங்கள்", ph:"உங்கள் கேள்வியை தட்டச்சு செய்யுங்கள்", send:"அனுப்பு", share:"Chat-ஐ WhatsApp-ல் அனுப்பு",
+    sheetTitle:"WhatsApp-ல் அனுப்ப", sheetHint:"இந்த செய்தியை சரிபார்த்து, WhatsApp-ல் அனுப்புங்கள்.",
+    sendWA:"WhatsApp-ல் அனுப்பு", close:"மூடு", prep:"செய்தி தயாராகிறது…", ended:"அழைப்பு முடிந்தது. இந்த chat-ஐ WhatsApp-ல் அனுப்பலாம்.",
+    nomic:"குரல் அழைப்புக்கு Chrome தேவை. கீழே உள்ள chat-ஐ பயன்படுத்தவும்.", denied:"மைக் தடுக்கப்பட்டுள்ளது. உலாவி அமைப்பில் அனுமதிக்கவும் அல்லது chat பயன்படுத்தவும்.",
+    err:"மன்னிக்கவும், இப்போது பதில் சொல்ல முடியவில்லை. WhatsApp-ல் செய்தி அனுப்புங்கள்.", you:"நீங்கள்", bot:"உதவியாளர்",
+    chatHello:"வணக்கம்! தேன், விலை, டெலிவரி, பணம் செலுத்துதல் பற்றி கேளுங்கள்.", silence:"உங்கள் குரல் கேட்கவில்லை, அழைப்பு முடிந்தது.",
+    rec:"ta-IN", wa:"JAJ Nectar Grove இணையதளத்திலிருந்து புதிய விசாரணை"}
 };
 
-let lang = "en", history = [], busy = false, recog = null, listening = false;
-const $ = id => document.getElementById(id);
-const log = $("log"), statusEl = $("status"), mic = $("mic"), txt = $("txt");
+let lang="en", history=[], transcript=[], inCall=false, busy=false, listening=false, speaking=false;
+let recog=null, timerId=null, secs=0, silent=0;
+const $=id=>document.getElementById(id);
+const log=$("log"), caption=$("caption");
 
-function add(role, text){
-  const d = document.createElement("div");
-  d.className = "msg " + (role === "me" ? "me" : "bot");
-  d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight;
+/* ---------- UI helpers ---------- */
+function setStatus(s){ $("status").textContent=s; }
+function updateShare(){ const off=transcript.length===0; $("share").disabled=off; $("share2").disabled=off; }
+
+function addMsg(role,text){
+  transcript.push({role,text});
+  const d=document.createElement("div");
+  d.className="msg "+(role==="me"?"me":"bot"); d.textContent=text;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+  if(inCall){
+    caption.style.display="block";
+    caption.innerHTML=""; const s=document.createElement("small");
+    s.textContent=role==="me"?T[lang].you:T[lang].bot;
+    caption.appendChild(s); caption.appendChild(document.createTextNode(text));
+  }
+  updateShare();
 }
-function setStatus(s){ statusEl.textContent = s; }
 
 function applyLang(l){
-  lang = l; const t = T[l];
-  document.documentElement.lang = l;
-  $("sub").textContent = t.sub; txt.placeholder = t.ph; $("send").textContent = t.send;
-  $("wa").textContent = t.wa; mic.setAttribute("aria-label", t.mic); setStatus(t.tap);
-  $("l-en").setAttribute("aria-pressed", l === "en"); $("l-ta").setAttribute("aria-pressed", l === "ta");
+  lang=l; const t=T[l]; document.documentElement.lang=l;
+  $("sub").textContent=t.sub; $("chatTitle").textContent=t.chatTitle; $("txt").placeholder=t.ph; $("send").textContent=t.send;
+  $("share").textContent=t.share; $("share2").textContent=t.share;
+  $("sheetTitle").textContent=t.sheetTitle; $("sheetHint").textContent=t.sheetHint;
+  $("sendWA").textContent=t.sendWA; $("closeSheet").textContent=t.close;
+  $("callLabel").textContent=inCall?t.end:t.call; $("call").setAttribute("aria-label",inCall?t.end:t.call);
+  $("l-en").setAttribute("aria-pressed",l==="en"); $("l-ta").setAttribute("aria-pressed",l==="ta");
   window.speechSynthesis && speechSynthesis.cancel();
 }
-$("l-en").onclick = () => applyLang("en");
-$("l-ta").onclick = () => applyLang("ta");
+$("l-en").onclick=()=>applyLang("en");
+$("l-ta").onclick=()=>applyLang("ta");
 
-/* ---- speech out ---- */
+$("chatHead").onclick=()=>{
+  const o=$("chat").classList.toggle("open"); $("chatHead").setAttribute("aria-expanded",o);
+  if(o) setTimeout(()=>$("txt").focus(),50);
+};
+
+/* ---------- speech out ---------- */
 function speak(text){
-  return new Promise(res => {
+  return new Promise(res=>{
     if(!("speechSynthesis" in window)) return res();
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = T[lang].tts;
-    const v = speechSynthesis.getVoices().find(v => v.lang.replace("_","-").toLowerCase().startsWith(u.lang.toLowerCase().slice(0,2)));
-    if(v) u.voice = v;
-    u.rate = 0.97; u.onend = u.onerror = () => res();
-    setStatus(T[lang].speak); speechSynthesis.speak(u);
+    const u=new SpeechSynthesisUtterance(text); u.lang=T[lang].rec;
+    const v=speechSynthesis.getVoices().find(v=>v.lang.replace("_","-").toLowerCase().startsWith(u.lang.slice(0,2).toLowerCase()));
+    if(v) u.voice=v; u.rate=0.97;
+    const done=()=>{speaking=false; res();}; u.onend=u.onerror=done;
+    speaking=true; setStatus(T[lang].speak); speechSynthesis.speak(u);
   });
 }
 
-/* ---- Gemini ---- */
-async function ask(q){
-  history.push({role:"user", parts:[{text:q}]});
-  const body = {
-    systemInstruction:{parts:[{text:SYSTEM}]},
-    contents: history.slice(-10),
-    generationConfig:{temperature:0.3, maxOutputTokens:300, thinkingConfig:{thinkingBudget:0}}
-  };
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+/* ---------- Gemini ---------- */
+async function gemini(system, contents, maxTokens){
+  const body={systemInstruction:{parts:[{text:system}]}, contents,
+    generationConfig:{temperature:0.3, maxOutputTokens:maxTokens, thinkingConfig:{thinkingBudget:0}}};
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
     {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
-  if(!r.ok) throw new Error("API " + r.status);
-  const j = await r.json();
-  const a = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-  if(!a) throw new Error("empty");
-  history.push({role:"model", parts:[{text:a}]});
+  if(!r.ok) throw new Error("API "+r.status);
+  const j=await r.json();
+  const a=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
+  if(!a) throw new Error("empty reply");
   return a;
 }
 
 async function handle(q){
-  q = q.trim(); if(!q || busy) return;
-  busy = true; add("me", q); setStatus(T[lang].think);
+  q=q.trim(); if(!q||busy) return;
+  busy=true; addMsg("me",q); setStatus(T[lang].think);
+  history.push({role:"user",parts:[{text:q}]});
+  let a;
   try{
-    const a = await ask(q); add("bot", a); await speak(a);
+    a=await gemini(SYSTEM, history.slice(-12), 300);
+    history.push({role:"model",parts:[{text:a}]}); addMsg("bot",a);
   }catch(e){
-    console.error(e); add("bot", T[lang].err); await speak(T[lang].err);
+    console.error(e); history.pop();
+    a=T[lang].err; addMsg("bot",a+" ("+e.message+")");
   }
-  busy = false; setStatus(T[lang].tap);
+  if(inCall){ await speak(a); }
+  busy=false;
+  if(inCall){ setStatus(T[lang].listen); listen(); } else setStatus("");
 }
 
-/* ---- speech in ---- */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-function toggleMic(){
-  if(!SR){ add("bot", T[lang].nomic); return; }
-  if(listening){ recog && recog.stop(); return; }
-  if(busy) return;
-  speechSynthesis && speechSynthesis.cancel();
-  recog = new SR(); recog.lang = T[lang].rec; recog.interimResults = false; recog.maxAlternatives = 1;
-  let got = false;
-  recog.onstart = () => { listening = true; mic.classList.add("listening"); setStatus(T[lang].listen); };
-  recog.onresult = e => { got = true; handle(e.results[0][0].transcript); };
-  recog.onerror = e => {
-    if(e.error === "not-allowed" || e.error === "service-not-allowed") add("bot", T[lang].denied);
-    else if(e.error === "no-speech") add("bot", T[lang].none);
+/* ---------- voice call ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+function listen(){
+  if(!inCall||busy||listening||speaking) return;
+  recog=new SR(); recog.lang=T[lang].rec; recog.interimResults=false; recog.maxAlternatives=1;
+  let got=false;
+  recog.onstart=()=>{listening=true; setStatus(T[lang].listen);};
+  recog.onresult=e=>{got=true; silent=0; handle(e.results[0][0].transcript);};
+  recog.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ addMsg("bot",T[lang].denied); endCall(true); }
   };
-  recog.onend = () => { listening = false; mic.classList.remove("listening"); if(!got && !busy) setStatus(T[lang].tap); };
-  recog.start();
+  recog.onend=()=>{
+    listening=false;
+    if(!inCall||busy||got) return;
+    if(++silent>=4){ addMsg("bot",T[lang].silence); endCall(); return; }
+    setTimeout(listen,250);
+  };
+  try{ recog.start(); }catch(e){ console.error(e); }
 }
-mic.onclick = toggleMic;
-$("send").onclick = () => { const v = txt.value; txt.value = ""; handle(v); };
-txt.addEventListener("keydown", e => { if(e.key === "Enter") $("send").click(); });
-$("wa").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Hi, I would like to order JAJ Pure Honey.");
 
-if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
+async function startCall(){
+  if(!SR){ addMsg("bot",T[lang].nomic); $("chat").classList.add("open"); return; }
+  inCall=true; silent=0; secs=0;
+  $("call").classList.add("live"); $("callLabel").textContent=T[lang].end; $("call").setAttribute("aria-label",T[lang].end);
+  setStatus(T[lang].connecting); $("timer").textContent="00:00";
+  timerId=setInterval(()=>{secs++; $("timer").textContent=String(Math.floor(secs/60)).padStart(2,"0")+":"+String(secs%60).padStart(2,"0");},1000);
+  await new Promise(r=>setTimeout(r,900));
+  if(!inCall) return;
+  addMsg("bot",T[lang].hello); await speak(T[lang].hello);
+  if(inCall){ setStatus(T[lang].listen); listen(); }
+}
+
+function endCall(silentEnd){
+  inCall=false; listening=false; speaking=false;
+  try{ recog&&recog.abort(); }catch(e){}
+  window.speechSynthesis && speechSynthesis.cancel();
+  clearInterval(timerId);
+  $("call").classList.remove("live"); $("callLabel").textContent=T[lang].call; $("call").setAttribute("aria-label",T[lang].call);
+  setStatus(transcript.length?T[lang].ended:""); 
+}
+$("call").onclick=()=>inCall?endCall():startCall();
+
+/* ---------- chat input ---------- */
+$("send").onclick=()=>{const v=$("txt").value; $("txt").value=""; handle(v);};
+$("txt").addEventListener("keydown",e=>{ if(e.key==="Enter") $("send").click(); });
+
+/* ---------- share to WhatsApp ---------- */
+function rawTranscript(){
+  return transcript.map(m=>(m.role==="me"?"Customer: ":"Assistant: ")+m.text).join("\n");
+}
+async function openShare(){
+  if(!transcript.length) return;
+  if(inCall) endCall();
+  $("sheet").classList.add("open"); $("sendWA").disabled=true;
+  $("summary").value=T[lang].prep;
+  let body;
+  try{
+    body=await gemini(
+      "You write a short WhatsApp message FROM a customer TO the shop JAJ Nectar Grove. Summarise the conversation: what the customer wants (product, quantity), their name and delivery area or address if given, and any open questions. Write in first person, plain text, under 110 words, no markdown, no emojis. Use the same language the customer used. Do not invent details that were not said.",
+      [{role:"user",parts:[{text:rawTranscript()}]}], 400);
+  }catch(e){
+    console.error(e); body=rawTranscript();
+  }
+  $("summary").value=T[lang].wa+":\n\n"+body;
+  $("sendWA").disabled=false;
+}
+$("share").onclick=openShare; $("share2").onclick=openShare;
+$("closeSheet").onclick=()=>$("sheet").classList.remove("open");
+$("sheet").addEventListener("click",e=>{ if(e.target.id==="sheet") $("sheet").classList.remove("open"); });
+$("sendWA").onclick=()=>{
+  const text=$("summary").value.trim().slice(0,1500);
+  window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(text),"_blank","noopener");
+};
+
+/* ---------- init ---------- */
 applyLang("en");
-add("bot", T.en.hello);
+log.innerHTML=""; const first=document.createElement("div"); first.className="msg bot"; first.textContent=T.en.chatHello; log.appendChild(first);
 </script>
 </body>
 </html>
